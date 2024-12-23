@@ -87,7 +87,6 @@ ORDER BY 5 DESC;
 
 
 -- Identify Top Landing Page for 'gsearch nonbrand' Traffic
-
 WITH page_rank AS -- CTE to sort pages viewed per session with ranking
 	(
 		SELECT created_at,	
@@ -132,7 +131,7 @@ WITH page_rank AS -- CTE to sort pages viewed per session with ranking
 				AND ws.utm_source = 'gsearch' 
 				AND ws.utm_campaign = 'nonbrand')
 	),
-	
+
 bounce_sessions as -- CTE for bounce sessions
 	(
 		SELECT wp.website_session_id
@@ -240,7 +239,6 @@ This landing page was launched on June 19, and the A/B test was run for one mont
 
 */
 
--- 
 WITH page_rank AS -- CTE to sort pages viewed per session with ranking
 	(
 		SELECT created_at,	
