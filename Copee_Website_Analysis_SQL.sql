@@ -475,7 +475,7 @@ bounce_sessions AS -- CTE for bounce sessions for all traffic source
 (
     SELECT website_session_id
     FROM website_pageviews
-    WHERE created_at BETWEEN '2012-01-01' AND '2012-12-31'
+    WHERE created_at BETWEEN '2012-03-19 00:00:00' AND '2012-07-31 23:59:59'
     GROUP BY 1
     HAVING COUNT (website_pageview_id) = 1 
 ),
@@ -485,7 +485,7 @@ session_duration AS -- CTE for time duration on the website for each active sess
     SELECT website_session_id,
            EXTRACT(EPOCH FROM (MAX(created_at) - MIN(created_at)))/60 AS duration -- session duration in minutes
     FROM website_pageviews AS wp
-    WHERE created_at BETWEEN '2012-01-01' and '2012-12-31'
+    WHERE created_at BETWEEN '2012-03-19 00:00:00' AND '2012-07-31 23:59:59'
     AND NOT EXISTS
         (SELECT 1 FROM bounce_sessions AS bs WHERE wp.website_session_id = bs.website_session_id) -- ignoring bounce sessions
     GROUP BY 1
@@ -497,11 +497,11 @@ session_duration AS -- CTE for time duration on the website for each active sess
 page_persession AS -- CTE for total page viewed for each session
 (
     SELECT website_session_id,
-           COUNT(website_pageview_id) AS total_page -- Menghitung jumlah halaman yang dilihat dalam sesi
+           COUNT(website_pageview_id) AS total_page -- count total page for each session
     FROM website_pageviews AS wp
-    WHERE created_at BETWEEN '2012-01-01' AND '2012-12-31'
+    WHERE created_at BETWEEN '2012-03-19 00:00:00' AND '2012-07-31 23:59:59'
     AND NOT EXISTS
-        (SELECT 1 FROM bounce_sessions AS bs WHERE wp.website_session_id = bs.website_session_id) -- Mengabaikan sesi bounce
+        (SELECT 1 FROM bounce_sessions AS bs WHERE wp.website_session_id = bs.website_session_id) -- ignoring bounce sessions
     GROUP BY 1
 )
 
@@ -527,7 +527,7 @@ LEFT JOIN page_persession AS pp
     ON ws.website_session_id = pp.website_session_id
 LEFT JOIN orders AS o
     ON ws.website_session_id = o.website_session_id
-WHERE ws.created_at BETWEEN '2012-01-01' AND '2012-12-31'
+WHERE ws.created_at BETWEEN '2012-03-19 00:00:00' AND '2012-07-31 23:59:59'
 ORDER BY 1;
 
 
@@ -544,7 +544,7 @@ WITH bounce_sessions AS
 (
     SELECT website_session_id
     FROM website_pageviews
-    WHERE created_at BETWEEN '2012-01-01' AND '2012-12-31'
+    WHERE created_at BETWEEN '2012-03-19 00:00:00' AND '2012-12-31 23:59:59'
     GROUP BY 1
     HAVING COUNT (website_pageview_id) = 1
 ),
@@ -556,7 +556,7 @@ page_rank AS
 				pageview_url,
 				RANK()OVER(PARTITION BY website_session_id ORDER BY website_pageview_id) AS rank_page
 		FROM website_pageviews AS wp
-		WHERE created_at  BETWEEN '2012-01-01' AND '2012-12-31'
+		WHERE created_at  BETWEEN '2012-03-19 00:00:00' AND '2012-12-31 23:59:59'
 	),
 	
 session_landing_page AS
@@ -588,7 +588,7 @@ LEFT JOIN bounce_sessions as bs
 ON ws.website_session_id = bs.website_session_id
 LEFT JOIN orders AS o
 ON ws.website_session_id = o.website_session_id 
-WHERE ws.created_at BETWEEN '2012-01-01' AND '2012-12-31'
+WHERE ws.created_at BETWEEN '2012-03-19 00:00:00' AND '2012-12-31 23:59:59'
 ORDER BY 1,2;
 
 
@@ -622,7 +622,7 @@ WITH RECURSIVE funnel AS
                 END AS funnel_step,
                 RANK() OVER(PARTITION BY website_session_id ORDER BY website_pageview_id) AS user_page_step
             FROM website_pageviews
-            WHERE created_at BETWEEN '2012-01-01' AND '2012-12-31' 
+            WHERE created_at BETWEEN '2012-03-19 00:00:00' AND '2012-12-31 23:59:59'
         ) AS base
         WHERE funnel_step = 1
 
@@ -655,7 +655,7 @@ WITH RECURSIVE funnel AS
                 END AS funnel_step,
                 RANK() OVER(PARTITION BY website_session_id ORDER BY website_pageview_id) AS user_page_step
             FROM website_pageviews
-            WHERE created_at BETWEEN '2012-01-01' AND '2012-12-31'
+            WHERE created_at BETWEEN '2012-03-19 00:00:00' AND '2012-12-31 23:59:59'
         ) AS b
         ON f.website_session_id = b.website_session_id 
         AND b.user_page_step = f.user_page_step + 1
