@@ -470,7 +470,7 @@ WITH user_min_date AS -- CTE for user's initial time accessing website
     SELECT user_id,
            MIN(created_at) AS start_date -- getting the initial date
     FROM website_sessions
-    WHERE created_at BETWEEN '2012-01-01' AND '2012-12-31'
+    WHERE created_at BETWEEN '2012-01-01 00:00:00' AND '2012-07-31 23:59:59'
     AND is_repeat_session = 0 
     GROUP BY 1
 ),
@@ -543,6 +543,7 @@ Creating Materialized Views for Visualization
 
 
 -- Master Table
+DROP MATERIALIZED VIEW IF EXISTS master_table;
 CREATE MATERIALIZED VIEW master_table AS
 WITH bounce_sessions AS
 (
@@ -568,8 +569,34 @@ session_landing_page AS
 	SELECT *
 	FROM page_rank
 	WHERE rank_page = 1	
-	)
+	),
 
+active_session_duration AS
+	(
+	SELECT 
+        ws.website_session_id,
+        ROUND(EXTRACT(EPOCH FROM MAX(ws.created_at) - MIN(ws.created_at))/60,2) AS duration_minute
+    FROM website_pageviews AS ws
+    LEFT JOIN bounce_sessions AS bs
+        ON ws.website_session_id = bs.website_session_id
+    WHERE ws.created_at BETWEEN '2012-03-19 00:00:00' AND '2012-12-31 23:59:59'
+    AND bs.website_session_id IS NULL 
+    GROUP BY ws.website_session_id
+	),
+
+active_session_page AS
+	(
+	SELECT 
+        ws.website_session_id,
+        COUNT(ws.website_pageview_id) AS total_page
+    FROM website_pageviews AS ws
+    LEFT JOIN bounce_sessions AS bs
+        ON ws.website_session_id = bs.website_session_id
+    WHERE ws.created_at BETWEEN '2012-03-19 00:00:00' AND '2012-12-31 23:59:59'
+    AND bs.website_session_id IS NULL  -- Pastikan sesi bukan bounce session
+    GROUP BY ws.website_session_id
+	)
+	
 SELECT ws.user_id,
 		ws.website_session_id,
 		ws.created_at,
@@ -577,28 +604,35 @@ SELECT ws.user_id,
 		ws.utm_source,
 		ws.utm_campaign,
 		ws.device_type,
-		CASE WHEN bs.website_session_id IS NULL THEN 'active session'
+		CASE WHEN bs.website_session_id IS NULL THEN 'active_session'
 			WHEN bs.website_session_id IS NOT NULL THEN 'bounce_session'
 			ELSE NULL
 		END AS is_bounce,
 		slp.pageview_url as landing_page,
 		CASE WHEN o.website_session_id IS NOT NULL THEN 'convert'
-			ELSE NULL
-		END AS is_convert
+			ELSE 'not_convert'
+		END AS is_convert,
+		asd.duration_minute AS session_duration,
+		asp.total_page AS session_total_page
 FROM website_sessions AS ws
-JOIN session_landing_page AS slp
+LEFT JOIN session_landing_page AS slp
 ON ws.website_session_id = slp.website_session_id
 LEFT JOIN bounce_sessions as bs
 ON ws.website_session_id = bs.website_session_id
 LEFT JOIN orders AS o
-ON ws.website_session_id = o.website_session_id 
+ON ws.website_session_id = o.website_session_id
+LEFT JOIN active_session_duration AS asd
+ON ws.website_session_id = asd.website_session_id
+LEFT JOIN active_session_page AS asp
+ON ws.website_session_id = asp.website_session_id
 WHERE ws.created_at BETWEEN '2012-03-19 00:00:00' AND '2012-12-31 23:59:59'
 ORDER BY 1,2;
 
 
 -- Funnel Table
+DROP MATERIALIZED VIEW IF EXISTS funnel_table;
 CREATE MATERIALIZED VIEW funnel_table AS
-WITH RECURSIVE funnel AS 
+WITH RECURSIVE funnel_table AS 
     (
         SELECT 
             website_session_id,
@@ -626,7 +660,7 @@ WITH RECURSIVE funnel AS
                 END AS funnel_step,
                 RANK() OVER(PARTITION BY website_session_id ORDER BY website_pageview_id) AS user_page_step
             FROM website_pageviews
-            WHERE created_at BETWEEN '2012-03-19 00:00:00' AND '2012-12-31 23:59:59'
+            WHERE created_at BETWEEN '2012-03-01 00:00:00' AND '2012-12-31 23:59:59'
         ) AS base
         WHERE funnel_step = 1
 
@@ -659,13 +693,12 @@ WITH RECURSIVE funnel AS
                 END AS funnel_step,
                 RANK() OVER(PARTITION BY website_session_id ORDER BY website_pageview_id) AS user_page_step
             FROM website_pageviews
-            WHERE created_at BETWEEN '2012-03-19 00:00:00' AND '2012-12-31 23:59:59'
+            WHERE created_at BETWEEN '2012-03-01 00:00:00' AND '2012-12-31 23:59:59'
         ) AS b
         ON f.website_session_id = b.website_session_id 
         AND b.user_page_step = f.user_page_step + 1
         AND b.funnel_step = f.funnel_step + 1 
     )
-	
-SELECT * 
-FROM funnel
-ORDER BY 1, 3;
+
+SELECT *
+FROM funnel_table;
