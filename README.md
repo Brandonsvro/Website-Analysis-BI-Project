@@ -21,4 +21,4 @@ As a data analyst, the manager have assigned me to handle the required analyses 
 
 **Case 3:** With the '/home' landing page optimization showing no results, the manager decided to conduct A/B testing  for a new landing page named '/lander-1' for 'gsearch nonbrand' traffic.  This landing page was launched on June 19, and the A/B test ran for one month (June 19 - July 31).
 
-**CASE 4:** After optimizing the performance of the 'gsearch nonbrand' campaign and landing page, the manager directed us to conduct a comprehensive funnel analysis for all traffic sources to identify pages with high exit rates. The manager also wants to understand when traffic starts to peak on the website to gain better insights into traffic behavior. (19 March - 31 July)
+**Case 4:** After optimizing the performance of the 'gsearch nonbrand' campaign and landing page, the manager directed us to conduct a comprehensive funnel analysis for all traffic sources to identify pages with high exit rates. The manager also wants to understand when traffic starts to peak on the website to gain better insights into traffic behavior. (19 March - 31 July)
